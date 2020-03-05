@@ -1,6 +1,6 @@
 import React, { Component } from 'react'
-import { StyleSheet, View, FlatList, Image, AsyncStorage, Alert } from 'react-native'
-import { Text, List, ListItem,Button, Fab, Icon } from 'native-base'
+import { StyleSheet, View, BackHandler, FlatList, Image, AsyncStorage, Alert } from 'react-native'
+import { Text, List, ListItem, Fab, Icon } from 'native-base'
 import axios from 'axios'
 import { ConfirmDialog } from 'react-native-simple-dialogs'
 
@@ -21,9 +21,9 @@ export default class Dashboard extends Component {
         this.openConfirm(false);
         setTimeout(
             () => {
-            //    if(this.state.btnValue=='logout'){
-                   this.handleLogout()
-            //    }
+                //    if(this.state.btnValue=='logout'){
+                this.handleLogout()
+                //    }
             },
             300,
         );
@@ -60,7 +60,7 @@ export default class Dashboard extends Component {
     handleLogout = async () => {
 
         const token = await AsyncStorage.getItem('@HistMyThings');
-        axios ({
+        axios({
             url: "https://histmythings1583381336810.mejik.id/graphql",
             method: "POST",
             data: {
@@ -77,7 +77,7 @@ export default class Dashboard extends Component {
                   }
                 `
             }
-        }).then(async res=> {
+        }).then(async res => {
             await AsyncStorage.setItem('@HistMyThings', '')
             this.setState({
                 token: ''
@@ -90,8 +90,19 @@ export default class Dashboard extends Component {
     handleDelete = () => {
 
     }
+
     componentDidMount() {
         this.getData()
+        BackHandler.addEventListener('hardwareBackPress', this.onBackPress);
+    }
+
+    componentWillUnmount() {
+        BackHandler.removeEventListener('hardwareBackPress', this.onBackPress);
+    }
+
+    onBackPress = () => {
+        
+        return true;
     }
     render() {
 
@@ -140,7 +151,7 @@ export default class Dashboard extends Component {
                         onPress={() => this.props.navigation.navigate('AddItem', { handleRefresh: this.getData })}
                         direction="up"
                         containerStyle={{}}
-                        style={{ backgroundColor: 'green' }}
+                        style={{ backgroundColor: '#174691' }}
                         position="bottomRight"
                     >
                         <Icon name="add" type="MaterialIcons" />
@@ -155,7 +166,7 @@ export default class Dashboard extends Component {
                             {
                                 title: "NO",
                                 onPress: this.optionNo,
-                                 titleStyle: {
+                                titleStyle: {
                                     color: "blue",
                                     colorDisabled: "aqua",
                                 },

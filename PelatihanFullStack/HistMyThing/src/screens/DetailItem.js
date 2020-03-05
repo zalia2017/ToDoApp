@@ -11,15 +11,16 @@ export default class DetailItem extends Component {
         //get passing id from Dashboard
         this.id = this.props.route.params.id
         this.item = this.props.route.params.item
-        this.state= {
-            histories: []
+        this.state = {
+            histories: [],
+            name: ''
         }
     }
 
     getData = async () => {
         const idUser = await AsyncStorage.getItem('@HistMyThings.idUser')
         const idItem = this.id
-        axios ({
+        axios({
             url: "https://histmythings1583381336810.mejik.id/graphql",
             method: "POST",
             data: {
@@ -38,16 +39,17 @@ export default class DetailItem extends Component {
                     }
                     `
             }
-        }).then(res =>{
+        }).then(res => {
             console.log(res.data.data.histories)
             this.setState({
-                histories: res.data.data.histories
+                histories: res.data.data.histories,
+                name: res.data.data.histories.name
             })
         }).catch(err => {
             // alert(err.toString())
         })
     }
-    componentDidMount(){
+    componentDidMount() {
         this.getData()
     }
     render() {
@@ -64,8 +66,13 @@ export default class DetailItem extends Component {
         const lengthOfArray = this.state.histories.length
         return (
             <View style={styles.container}>
-                <Text>{item}</Text>
+                <View style={{borderWidth: 1, borderColor: '#FD9644', height: 50, alignItems: 'center', justifyContent: 'center'
+            , borderRadius: 10, width: '100%'}}>
+                    <Text style={{ color: '#505154', fontFamily: 'Poppins-Bold', fontSize: 18  }}>{item}</Text>
+                </View>
+
                 <View style={styles.container}>
+                
                     {lengthOfArray == 0 ?
                         <View style={{ flex: 1, alignItems: 'center', marginTop: 50 }}>
                             <Image source={require('./../assets/img/no_thing.png')} />
@@ -73,24 +80,28 @@ export default class DetailItem extends Component {
                         </View>
 
                         :
-                        <FlatList style={{padding:0}}
+                        <View style={{marginTop: -20}}>
+                        <Text style={{fontFamily: 'Poppins-Regular', fontSize: 14, color: '#FD9644'}}>Your Item's repair history will shown here</Text>
+                        
+                        <FlatList style={{ padding: 0, marginTop: 20 }}
                             data={this.state.histories}
                             renderItem={({ item, index }) =>
                                 <List>
-                                    <ListItem style={{marginLeft:0}}>
-                                        <Text>{index+1}. {item.name}   ({`${Moment(item.date).format('DD MMM Y')}`})</Text>
+                                    <ListItem style={{ marginLeft: 0 }}>
+                                        <Text style={{fontFamily: 'Poppins-Regular', fontSize: 16}}>{index + 1}. {item.name}   ({`${Moment(item.date).format('DD MMM Y')}`})</Text>
                                     </ListItem>
                                 </List>
                             }
                             keyExtractor={item => item.id}
                         />
+                        </View>
                     }
 
                     <Fab
-                        onPress={() => this.props.navigation.navigate('AddHistory', {handleRefresh: this.getData, id: this.id})}
+                        onPress={() => this.props.navigation.navigate('AddHistory', { handleRefresh: this.getData, id: this.id })}
                         direction="up"
                         containerStyle={{}}
-                        style={{ backgroundColor: 'green' }}
+                        style={{ backgroundColor: '#174691' }}
                         position="bottomRight"
                     >
                         <Icon name="add" type="MaterialIcons" />

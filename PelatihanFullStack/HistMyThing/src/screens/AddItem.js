@@ -87,7 +87,38 @@ export default class AddItem extends Component {
                 id: '3',
                 // name: 'Mesin Cuci',
                 value: 'Mesin Cuci'
+            },
+            {
+                id: '4',
+                // name: 'Mesin Cuci',
+                value: 'Sepeda'
+            },
+            {
+                id: '5',
+                // name: 'Mesin Cuci',
+                value: 'Mobil'
+            },
+            {
+                id: '6',
+                // name: 'Mesin Cuci',
+                value: 'Tempat Tidur'
+            },
+            {
+                id: '7',
+                // name: 'Mesin Cuci',
+                value: 'Lemari'
+            },
+            {
+                id: '8',
+                // name: 'Mesin Cuci',
+                value: 'Komputer'
+            },
+            {
+                id: '9',
+                // name: 'Mesin Cuci',
+                value: 'Laptop'
             }
+
 
         ]
         return (
