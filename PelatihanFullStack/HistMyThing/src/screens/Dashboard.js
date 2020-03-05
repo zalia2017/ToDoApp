@@ -1,81 +1,112 @@
 import React, { Component } from 'react'
-import { StyleSheet, View, FlatList, Image } from 'react-native'
-import { Form, Button, Text, List, ListItem, Fab, Icon } from 'native-base'
+import { StyleSheet, View, FlatList, Image, AsyncStorage, Alert } from 'react-native'
+import { Text, List, ListItem,Button, Fab, Icon } from 'native-base'
+import axios from 'axios'
+import { ConfirmDialog } from 'react-native-simple-dialogs'
 
-import TextInput from './../components/TextInput'
 import { ScrollView, TouchableOpacity } from 'react-native-gesture-handler';
 
 export default class Dashboard extends Component {
     constructor(props) {
         super(props)
         this.state = {
-            visibility: true
+            items: [],
+            idUser: '',
         }
     }
-    handleVisibility = () => {
-        this.setState({ visibility: !this.state.visibility })
+    openConfirm = (show, value) => {
+        this.setState({ showConfirm: show, btnValue: value });
+    }
+    optionYes = () => {
+        this.openConfirm(false);
+        setTimeout(
+            () => {
+            //    if(this.state.btnValue=='logout'){
+                   this.handleLogout()
+            //    }
+            },
+            300,
+        );
+    }
+    optionNo = () => {
+        this.openConfirm(false);
+    }
+    getData = async () => {
+        const idUser = await AsyncStorage.getItem('@HistMyThings.idUser')
+        axios({
+            url: "https://histmythings1583381336810.mejik.id/graphql",
+            method: "POST",
+            data: {
+                variables: {
+                    idUser: `${idUser}`
+                },
+                query: `
+                    query($idUser: String!){
+                        items(where: {
+                            idUser: $idUser
+                        }){
+                            id
+                            name
+                        }
+                    }
+                    `
+            }
+        }).then(res => {
+            this.setState({
+                items: res.data.data.items
+            })
+        })
+    }
+    handleLogout = async () => {
+
+        const token = await AsyncStorage.getItem('@HistMyThings');
+        axios ({
+            url: "https://histmythings1583381336810.mejik.id/graphql",
+            method: "POST",
+            data: {
+                variables: {
+                    token: '${token}'
+                },
+                query: `
+                mutation($token: String!) {
+                    logout(input: {
+                        token: $token
+                      }){
+                        lastName
+                      }
+                  }
+                `
+            }
+        }).then(async res=> {
+            await AsyncStorage.setItem('@HistMyThings', '')
+            this.setState({
+                token: ''
+            })
+            this.props.navigation.navigate('Login')
+        }).catch(err => {
+            alert(err.toString())
+        })
+    }
+    handleDelete = () => {
+
+    }
+    componentDidMount() {
+        this.getData()
     }
     render() {
-        const listOfThing = [
-            {
-                id: '1',
-                list: 'TV Rumah Ruang Tamu',
-            },
-            {
-                id: '2',
-                list: 'Motor Vario',
-            },
-            {
-                id: '3',
-                list: 'Motor Revo',
-            },
-            {
-                id: '4',
-                list: 'AC Rumah Kamar Tidur',
-            },
-            {
-                id: '5',
-                list: 'Mesin Cuci Rumah Sanken',
-            },
-            {
-                id: '6',
-                list: 'Sepeda',
-            },
-            {
-                id: '7',
-                list: 'Sofa Merah Rumah',
-            },
-            {
-                id: '8',
-                list: 'Bangku Kayu Panjang di Rumah',
-            },
-            {
-                id: '9',
-                list: 'Lemari Kayu Kamar',
-            },
-            {
-                id: '10',
-                list: 'Kipas Angin Standing Ruang Tamu',
-            },
-            {
-                id: '11',
-                list: 'Kompor Gas 2 Tungku Rumah',
-            },
-            {
-                id: '12',
-                list: 'Magic Com Myako di Rumah',
-            }
-        ]
-        const listOfThing2 = [
-        ]
-        var lengthOfArray = listOfThing.length
+
+        var lengthOfArray = this.state.items.length
 
         this.props.navigation.setOptions({
             headerShown: true,
+            headerBackTitleVisible: false,
             keyboardHandlingEnabled: false,
-            headerTitle: 'Dashboard',
+            headerTitle: 'ITEM LISTS',
+            headerLeft: null,
+            headerRight: () => <TouchableOpacity onPress={() => this.openConfirm(true, 'logout')}><Icon type="MaterialIcons" name="exit-to-app" style={{ color: '#ffffff' }} /></TouchableOpacity>,
             headerStyle: { backgroundColor: '#505154' },
-            headerTintColor: '#FD9644'
+            headerTintColor: '#FD9644',
+            headerRightContainerStyle: { marginRight: 16 },
         });
         return (
             <View style={{ flex: 1 }}>
@@ -88,27 +119,25 @@ export default class Dashboard extends Component {
 
                         :
                         <FlatList
-                            data={listOfThing}
-                            renderItem={({ item }) =>
+                            data={this.state.items}
+                            renderItem={({ item, index }) =>
                                 <List>
                                     <TouchableOpacity
-                                        onPress={() => this.props.navigation.navigate('DetailItem', { id: item.id, item: item.list })}
+                                        onPress={() => this.props.navigation.navigate('DetailItem', { id: item.id, item: item.name })}
                                     >
                                         <ListItem>
-                                            <Text>{item.id}. </Text>
-                                            <Text>{item.list}</Text>
+                                            <Text>{index + 1}.{item.name}. </Text>
                                         </ListItem>
                                     </TouchableOpacity>
-
-
                                 </List>
+
                             }
                             keyExtractor={item => item.id}
                         />
                     }
 
                     <Fab
-                        onPress={() => this.props.navigation.navigate('AddItem')}
+                        onPress={() => this.props.navigation.navigate('AddItem', { handleRefresh: this.getData })}
                         direction="up"
                         containerStyle={{}}
                         style={{ backgroundColor: 'green' }}
@@ -117,13 +146,37 @@ export default class Dashboard extends Component {
                         <Icon name="add" type="MaterialIcons" />
 
                     </Fab>
-
-
+                    <ConfirmDialog
+                        title="Confirm Dialog"
+                        message="Are you sure want to logout?"
+                        onTouchOutside={() => this.openConfirm(false)}
+                        visible={this.state.showConfirm}
+                        negativeButton={
+                            {
+                                title: "NO",
+                                onPress: this.optionNo,
+                                 titleStyle: {
+                                    color: "blue",
+                                    colorDisabled: "aqua",
+                                },
+                                style: {
+                                    backgroundColor: "transparent",
+                                    backgroundColorDisabled: "transparent",
+                                },
+                            }
+                        }
+                        positiveButton={
+                            {
+                                title: "YES",
+                                onPress: this.optionYes,
+                            }
+                        }
+                    />
                 </View>
                 <TouchableOpacity
                     onPress={() => this.props.navigation.navigate('ScanQR')}
-                 style={{ backgroundColor: '#FD9644', height: 50, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{color:'white'}}>Scan QR Code</Text>
+                    style={{ backgroundColor: '#FD9644', height: 50, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ color: 'white' }}>Scan QR Code</Text>
                 </TouchableOpacity>
             </View>
         )

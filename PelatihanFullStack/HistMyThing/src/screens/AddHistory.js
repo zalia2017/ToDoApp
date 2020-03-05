@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, AsyncStorage} from 'react-native'
 import { Form, Button, Text, DatePicker } from 'native-base'
+import axios from 'axios'
 
 import TextInput from '../components/TextInput'
 import { ScrollView } from 'react-native-gesture-handler';
@@ -12,12 +13,57 @@ export default class AddHistory extends Component {
         this.setDate = this.setDate.bind(this);
         this.state = {
             visibility: true,
-            selected: 'key1'
+            selected: 'key1',
+            name: ''
         }
     }
 
     setDate(newDate) {
         this.setState({ chosenDate: newDate });
+    }
+    
+    handleSave = async () => {
+        const token = await AsyncStorage.getItem('@HistMyThings');
+        const idUser = await AsyncStorage.getItem('@HistMyThings.idUser');
+
+        if(this.state.name=='' || this.state.chosenDate==''){
+            alert('Masih ada data yang kosong')
+            return false
+        }
+        axios({
+            url: "https://histmythings1583381336810.mejik.id/graphql",
+            method: "POST",
+            headers: {
+                "Authorization" : `Bearer ${token}`
+            },
+            data: {
+                variables: {
+                    name: this.state.name,
+                    idItem: this.props.route.params.id,
+                    date: this.state.chosenDate
+                },
+                query: `
+                    mutation($name: String!, $idItem: String!, $date: DateTime!) {
+                        createHistory(input: {
+                            name: $name
+                            idItem: $idItem
+                            date: $date
+                          },) {
+                               id
+                                name
+                                idItem
+                                date
+                          }
+                    }
+                `
+            }
+        }).then(async res => {
+            this.props.route.params.handleRefresh()
+            this.props.navigation.goBack()
+        }).catch(err => {
+            console.log(err)
+            alert(err.toString())
+        })
     }
     render() {
         this.props.navigation.setOptions({
@@ -56,11 +102,12 @@ export default class AddHistory extends Component {
                         <TextInput
                             label="Repair Description"
                             placeholder="e.g Change LCD Component"
+                            onChangeText={(text)=> this.setState({name: text})}
                         />
 
                     </Form>
                     <View style={styles.sectionFooter}>
-                        <Button block style={styles.btnBlock} onPress={() => this.props.navigation.goBack()}>
+                        <Button block style={styles.btnBlock} onPress={() => this.handleSave()}>
                             <Text style={styles.labelBtn}>{"ADD"}</Text>
                         </Button>
                     </View>

@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
-import { StyleSheet, View } from 'react-native'
+import { StyleSheet, View, AsyncStorage } from 'react-native'
 import { Form, Button, Text, Picker, Icon } from 'native-base'
+import axios from 'axios'
 
 import TextInput from './../components/TextInput'
 import { ScrollView } from 'react-native-gesture-handler';
@@ -9,19 +10,60 @@ export default class AddItem extends Component {
     constructor(props) {
         super(props)
         this.state = {
-            visibility: true,
-            selected: 'key1'
+            selected: 'key1',
+            name: '',
+            category: ''
         }
     }
 
+    handleSave = async () => {
+        const token = await AsyncStorage.getItem('@HistMyThings');
+        const idUser = await AsyncStorage.getItem('@HistMyThings.idUser');
+        if(this.state.name==''){
+            alert('Masih ada data yang kosong')
+            return false
+        }
+        axios({
+            url: "https://histmythings1583381336810.mejik.id/graphql",
+            method: "POST",
+            headers: {
+                "Authorization" : `Bearer ${token}`
+            },
+            data: {
+                variables: {
+                    name: this.state.name,
+                    category: this.state.category,
+                    idUser:   `${idUser}`
+                },
+                query: `
+                    mutation($name: String!, $category: String!, $idUser: String!) {
+                        createItem(input: {
+                            name: $name,
+                            category: $category
+                            idUser: $idUser
+                        },) {
+                            id
+                            name
+                            category
+                        }
+                    }
+                `
+            }
+        }).then(async res => {
+            this.props.route.params.handleRefresh()
+            this.props.navigation.goBack()
+        }).catch(err => {
+            console.log(err)
+            alert(err.toString())
+        })
+    }
     onValueChange(value) {
         this.setState({
-            selected: value
+            selected: value,
+
         });
     }
-    handleVisibility = () => {
-        this.setState({ visibility: !this.state.visibility })
-    }
+   
     render() {
         this.props.navigation.setOptions({
             headerShown: true,
@@ -33,18 +75,18 @@ export default class AddItem extends Component {
         const listOfCategory = [
             {
                 id: '1',
-                name: 'TV',
-                value: 'key0'
+                // name: 'TV',
+                value: 'TV'
             },
             {
                 id: '2',
-                name: 'Motor',
-                value: 'key1'
+                // name: 'Motor',
+                value: 'Motor'
             },
             {
                 id: '3',
-                name: 'Mesin Cuci',
-                value: 'key2'
+                // name: 'Mesin Cuci',
+                value: 'Mesin Cuci'
             }
 
         ]
@@ -57,7 +99,8 @@ export default class AddItem extends Component {
                     <Form>
                         <TextInput
                             label="Item Name"
-                            placeholder="e.g LG TV on Living Roomg"
+                            placeholder="e.g LG TV on Living Room"
+                            onChangeText={(text)=>this.setState({'name': text})}
                         />
                         <Text style={styles.labelInput}>{"Category"}</Text>
                         <View style={styles.input}>
@@ -70,7 +113,7 @@ export default class AddItem extends Component {
                                 onValueChange={this.onValueChange.bind(this)}
                             >
                                 {listOfCategory.map((item) =>
-                                     <Picker.Item label={item.name} key={item.id} value={item.value} />
+                                     <Picker.Item label={item.value} key={item.id} value={item.value} />
                                 )}
                                 <Picker.Item label="Other" />
 
@@ -79,7 +122,7 @@ export default class AddItem extends Component {
                         
                     </Form>
                     <View style={styles.sectionFooter}>
-                        <Button block style={styles.btnBlock} onPress={() => this.props.navigation.goBack()}>
+                        <Button block style={styles.btnBlock} onPress={() => this.handleSave()}>
                             <Text style={styles.labelBtn}>{"ADD"}</Text>
                         </Button>
                     </View>

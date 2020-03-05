@@ -21,13 +21,13 @@ const TextInput = (props) => {
                         <Icon active
                             onPress={props.changeVisibility}
                             type="MaterialIcons"
-                            name="visibility"
+                            name="visibility-off"
                             style={styles.iconEye} />
                         :
                         <Icon active
                             onPress={props.changeVisibility}
                             type="MaterialIcons"
-                            name="visibility-off"
+                            name="visibility"
                             style={styles.iconEye} />
                     :
                     null

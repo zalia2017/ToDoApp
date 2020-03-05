@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
-import { StyleSheet, View, Image } from 'react-native'
+import { StyleSheet, View, Image, AsyncStorage } from 'react-native'
 import { Form, Button, Text } from 'native-base'
+import axios from 'axios'
 
 import TextInput from './../components/TextInput'
 import { ScrollView } from 'react-native-gesture-handler'
@@ -9,12 +10,53 @@ class Login extends Component {
     constructor(props) {
         super(props)
         this.state = {
-            visibility: true
+            visibility: true,
+            token: '',
+            email: '',
+            password: ''
         }
     }
 
     handleVisibility = () => {
         this.setState({visibility: !this.state.visibility})
+    }
+    handleClear = () => {
+        this.setState({email: '', password: ''});
+    }
+    handleLogin = () => {
+        axios ({
+            url: "https://histmythings1583381336810.mejik.id/graphql",
+            method: "POST",
+            data: {
+                variables: {
+                    email: this.state.email,
+                    password: this.state.password
+                },
+                query: `
+                mutation($email: EmailAddress!, $password: String!) {
+                    login(input: {
+                      email: $email
+                      password: $password
+                    }){
+                      token
+                      user{
+                          id
+                      }
+                    }
+                  }
+                `
+            }
+        }).then(async res=> {
+            await AsyncStorage.setItem('@HistMyThings', res.data.data.login.token)
+            await AsyncStorage.setItem('@HistMyThings.idUser', res.data.data.login.user.id)
+            this.setState({
+                token: res.data.data.login.token
+            })
+            this.handleClear()
+            this.props.navigation.navigate('Dashboard')
+        }).catch(err => {
+            alert(err.toString())
+        })
     }
     render() {
         this.props.navigation.setOptions({
@@ -38,6 +80,8 @@ class Login extends Component {
                         label="Email"
                         placeholder="e.g. zulka.ajuab@gmail.com"
                         keyboardType={"email-address"}
+                        onChangeText={(text)=> this.setState({email: text})}
+                        value={this.state.email}
                    />
                    <TextInput
                         password={true}
@@ -45,11 +89,14 @@ class Login extends Component {
                         label="Password"
                         placeholder="Input your Password..."
                         changeVisibility={this.handleVisibility}
+                        onChangeText={(text)=> this.setState({password: text})}
+                        value={this.state.password}
+
                     />
                 </Form>
                 <View style={styles.sectionFooter}>
                     <Button block style={styles.btnBlock} 
-                        onPress={()=>this.props.navigation.navigate('Dashboard')}>
+                        onPress={this.handleLogin}>
                             <Text style={styles.labelBtn}>{"SIGN IN"}</Text>
                     </Button>
                     <View style={styles.infoFooter}>
